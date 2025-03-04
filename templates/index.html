@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FB Ad Library Video Downloader</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        input, button { padding: 10px; margin: 5px; }
+        video { display: block; margin: 10px auto; max-width: 100%; }
+    </style>
+</head>
+<body>
+    <h2>Facebook Ad Library Video Downloader</h2>
+    <form id="searchForm">
+        <input type="text" id="searchTerm" placeholder="Enter search term" required>
+        <button type="submit">Search</button>
+    </form>
+    <div id="results"></div>
+
+    <script>
+        document.getElementById("searchForm").onsubmit = async function(event) {
+            event.preventDefault();
+            let searchTerm = document.getElementById("searchTerm").value;
+
+            let response = await fetch("/search", {
+                method: "POST",
+                body: new URLSearchParams({ "search_term": searchTerm }),
+                headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            });
+
+            let resultDiv = document.getElementById("results");
+            resultDiv.innerHTML = "";
+            
+            if (response.ok) {
+                let data = await response.json();
+                data.videos.forEach(url => {
+                    let video = document.createElement("video");
+                    video.src = url;
+                    video.controls = true;
+                    resultDiv.appendChild(video);
+
+                    let downloadBtn = document.createElement("a");
+                    downloadBtn.href = url;
+                    downloadBtn.download = "fb_ad_video.mp4";
+                    downloadBtn.innerText = "Download Video";
+                    resultDiv.appendChild(downloadBtn);
+                });
+            } else {
+                resultDiv.innerHTML = "<p>No videos found.</p>";
+            }
+        };
+    </script>
+</body>
+</html>
