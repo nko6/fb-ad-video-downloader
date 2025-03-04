@@ -15,31 +15,32 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 def get_facebook_ad_videos(search_query):
-    logging.info(f"Received search query: {search_query}")  # Step 1: Confirm query received
-
     options = Options()
     options.add_argument("--headless")
+    options.add_argument("--disable-gpu")  # Helps in server environments
+    options.add_argument("--no-sandbox")   # Needed for some cloud environments
+    options.add_argument("--disable-dev-shm-usage")  # Prevents crashes
+
+    logging.debug("Starting Chrome WebDriver...")
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     base_url = "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&q="
     search_url = base_url + search_query.replace(" ", "%20")
 
-    logging.info(f"Opening URL: {search_url}")  # Step 2: Verify correct URL
+    logging.debug(f"Fetching URL: {search_url}")
     driver.get(search_url)
+    time.sleep(5)
 
-    time.sleep(5)  # Allow time for page to load
-
+    logging.debug("Parsing page source with BeautifulSoup")
     soup = BeautifulSoup(driver.page_source, "html.parser")
-
-    # Log the page source length (if it’s empty, something is wrong)
-    logging.info(f"Page source length: {len(driver.page_source)}")
-
     video_tags = soup.find_all("video")
-    video_urls = [video.get("src") for video in video_tags if video.get("src")]
-
-    logging.info(f"Found {len(video_urls)} video(s)")  # Step 3: Confirm videos found
 
     driver.quit()
+
+    video_urls = [video.get("src") for video in video_tags if video.get("src")]
+
+    if not video_urls:
+        logging.warning("No videos found!")
 
     return video_urls
 
