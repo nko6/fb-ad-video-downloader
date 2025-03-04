@@ -2,11 +2,9 @@ from flask import Flask, request, jsonify, render_template
 import time
 import logging
 import os
+import chromedriver_autoinstaller
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 
 # Initialize Flask app
@@ -22,14 +20,11 @@ def get_facebook_ad_videos(search_query):
     options.add_argument("--no-sandbox")  
     options.add_argument("--disable-dev-shm-usage")  
 
-    # ✅ Use Render's pre-installed Chromium
-    options.binary_location = "/usr/bin/chromium-browser"
-
-    # ✅ Dynamically install and use ChromeDriver
-    service = Service(ChromeDriverManager().install())
+    # ✅ Install ChromeDriver dynamically before launching the browser
+    chromedriver_autoinstaller.install()
 
     logging.debug("Starting Chrome WebDriver...")
-    driver = webdriver.Chrome(service=service, options=options)
+    driver = webdriver.Chrome(options=options)
 
     base_url = "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&q="
     search_url = base_url + search_query.replace(" ", "%20")
