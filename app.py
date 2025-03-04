@@ -4,6 +4,7 @@ import logging
 import os
 import chromedriver_autoinstaller
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 
@@ -13,6 +14,9 @@ app = Flask(__name__)
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
+# ✅ Auto-install ChromeDriver
+chromedriver_autoinstaller.install()
+
 def get_facebook_ad_videos(search_query):
     options = Options()
     options.add_argument("--headless")
@@ -20,18 +24,18 @@ def get_facebook_ad_videos(search_query):
     options.add_argument("--no-sandbox")  
     options.add_argument("--disable-dev-shm-usage")  
 
-    # ✅ Install ChromeDriver dynamically before launching the browser
-    chromedriver_autoinstaller.install()
+    # ✅ Do NOT set `binary_location`, let Selenium handle it
+    service = Service()  # Auto-detect ChromeDriver
 
     logging.debug("Starting Chrome WebDriver...")
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(service=service, options=options)
 
     base_url = "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&q="
     search_url = base_url + search_query.replace(" ", "%20")
 
     logging.debug(f"Fetching URL: {search_url}")
     driver.get(search_url)
-    time.sleep(5)  # Wait for page to load
+    time.sleep(5)
 
     logging.debug("Parsing page source with BeautifulSoup")
     soup = BeautifulSoup(driver.page_source, "html.parser")
