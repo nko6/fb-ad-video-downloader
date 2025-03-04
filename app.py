@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 import time
 import logging
+import os
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -17,12 +18,20 @@ logging.basicConfig(level=logging.DEBUG)
 def get_facebook_ad_videos(search_query):
     options = Options()
     options.add_argument("--headless")
-    options.add_argument("--disable-gpu")  # Helps in server environments
-    options.add_argument("--no-sandbox")   # Needed for some cloud environments
-    options.add_argument("--disable-dev-shm-usage")  # Prevents crashes
+    options.add_argument("--disable-gpu")  
+    options.add_argument("--no-sandbox")  
+    options.add_argument("--disable-dev-shm-usage")  
+    options.binary_location = os.getenv("GOOGLE_CHROME_BIN", "/usr/bin/chromium")  # More flexible Chromium path
 
-    logging.debug("Starting Chrome WebDriver...")
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    logging.debug("Initializing Chrome WebDriver...")
+    try:
+        driver = webdriver.Chrome(
+            service=Service(os.getenv("CHROMEDRIVER_PATH", "/usr/local/bin/chromedriver")),
+            options=options
+        )
+    except Exception as e:
+        logging.error(f"Error initializing Chrome WebDriver: {e}")
+        return []
 
     base_url = "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&q="
     search_url = base_url + search_query.replace(" ", "%20")
@@ -39,6 +48,8 @@ def get_facebook_ad_videos(search_query):
 
     video_urls = [video.get("src") for video in video_tags if video.get("src")]
 
+    logging.info(f"Found {len(video_urls)} video(s) for query: {search_query}")
+    
     if not video_urls:
         logging.warning("No videos found!")
 
