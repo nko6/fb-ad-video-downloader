@@ -25,8 +25,8 @@ def get_facebook_ad_videos(search_query):
     # ✅ Use Render's pre-installed Chromium
     options.binary_location = "/usr/bin/chromium-browser"
 
-    # ✅ Use Render's pre-installed ChromeDriver
-    service = Service("/usr/lib/chromium-browser/chromedriver")
+    # ✅ Dynamically install and use ChromeDriver
+    service = Service(ChromeDriverManager().install())
 
     logging.debug("Starting Chrome WebDriver...")
     driver = webdriver.Chrome(service=service, options=options)
@@ -36,7 +36,7 @@ def get_facebook_ad_videos(search_query):
 
     logging.debug(f"Fetching URL: {search_url}")
     driver.get(search_url)
-    time.sleep(5)
+    time.sleep(5)  # Wait for page to load
 
     logging.debug("Parsing page source with BeautifulSoup")
     soup = BeautifulSoup(driver.page_source, "html.parser")
@@ -70,4 +70,4 @@ def search():
     return jsonify({"videos": video_urls})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
