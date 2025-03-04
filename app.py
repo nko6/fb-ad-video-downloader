@@ -21,17 +21,15 @@ def get_facebook_ad_videos(search_query):
     options.add_argument("--disable-gpu")  
     options.add_argument("--no-sandbox")  
     options.add_argument("--disable-dev-shm-usage")  
-    options.binary_location = os.getenv("GOOGLE_CHROME_BIN", "/usr/bin/chromium")  # More flexible Chromium path
 
-    logging.debug("Initializing Chrome WebDriver...")
-    try:
-        driver = webdriver.Chrome(
-            service=Service(os.getenv("CHROMEDRIVER_PATH", "/usr/local/bin/chromedriver")),
-            options=options
-        )
-    except Exception as e:
-        logging.error(f"Error initializing Chrome WebDriver: {e}")
-        return []
+    # ✅ Use Render's pre-installed Chromium
+    options.binary_location = "/usr/bin/chromium-browser"
+
+    # ✅ Use Render's pre-installed ChromeDriver
+    service = Service("/usr/lib/chromium-browser/chromedriver")
+
+    logging.debug("Starting Chrome WebDriver...")
+    driver = webdriver.Chrome(service=service, options=options)
 
     base_url = "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&q="
     search_url = base_url + search_query.replace(" ", "%20")
@@ -48,8 +46,6 @@ def get_facebook_ad_videos(search_query):
 
     video_urls = [video.get("src") for video in video_tags if video.get("src")]
 
-    logging.info(f"Found {len(video_urls)} video(s) for query: {search_query}")
-    
     if not video_urls:
         logging.warning("No videos found!")
 
@@ -62,7 +58,7 @@ def home():
 @app.route("/search", methods=["POST"])
 def search():
     search_query = request.form.get("search_term")
-    logging.info(f"User searched for: {search_query}")  # Step 1: Confirm input received
+    logging.info(f"User searched for: {search_query}")
 
     video_urls = get_facebook_ad_videos(search_query)
 
@@ -70,7 +66,7 @@ def search():
         logging.warning("No videos found for the given query")
         return jsonify({"error": "No videos found"}), 404
 
-    logging.info(f"Returning {len(video_urls)} video(s) to frontend")  # Step 4: Confirm response
+    logging.info(f"Returning {len(video_urls)} video(s) to frontend")
     return jsonify({"videos": video_urls})
 
 if __name__ == "__main__":
